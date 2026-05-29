@@ -36,7 +36,7 @@ Esto genera múltiples problemas operativos y estratégicos para la organizació
 
 ---
 
-## 1. Procesos manuales de consolidación
+##  Procesos manuales de consolidación
 
 El equipo de inteligencia de negocio debe exportar manualmente información desde múltiples plataformas y consolidarla en archivos Excel.
 
@@ -51,7 +51,7 @@ Este proceso tarda entre 3 y 5 días hábiles para generar reportes ejecutivos.
 
 ---
 
-## 2. Información desactualizada
+##  Información desactualizada
 
 Los datos de inventario pueden presentar hasta 72 horas de retraso respecto a la operación real.
 
@@ -64,7 +64,7 @@ Esto provoca:
 
 ---
 
-## 3. Inconsistencia de datos
+##  Inconsistencia de datos
 
 Los productos y clientes presentan diferencias entre sistemas.
 
@@ -82,7 +82,7 @@ Ejemplos:
 
 ---
 
-## 4. Falta de trazabilidad logística
+##  Falta de trazabilidad logística
 
 No existe una correlación automática entre:
 
@@ -98,7 +98,7 @@ Esto impide medir:
 - Eficiencia de rutas
 
 ---
-## 5. Problemas de escalabilidad
+## Problemas de escalabilidad
 
 El procesamiento actual depende de un servidor Windows Server 2012 con capacidad limitada.
 
@@ -110,7 +110,7 @@ Durante temporadas de alta demanda:
 
 ---
 
-## 1. Drivers Funcionales
+## Drivers Funcionales
 
 | Driver | Descripción | Impacto en la arquitectura |
 |---|---|---|
@@ -121,7 +121,7 @@ Durante temporadas de alta demanda:
 
 ---
 
-## 2. Drivers No Funcionales
+## Drivers No Funcionales
 
 | Driver | Descripción | Impacto en la arquitectura |
 |---|---|---|
@@ -136,7 +136,7 @@ Durante temporadas de alta demanda:
 
 ---
 
-## 3. Restricciones Arquitectónicas
+## Restricciones Arquitectónicas
 
 | Restricción | Descripción | Decisión asociada |
 |---|---|---|
@@ -149,7 +149,7 @@ Durante temporadas de alta demanda:
 
 ---
 
-## 4. ASR - Requerimientos Arquitectónicamente Significativos
+##  ASR - Requerimientos Arquitectónicamente Significativos
 
 | Código | ASR | Prioridad | Justificación |
 |---|---|---|---|
@@ -164,11 +164,11 @@ Durante temporadas de alta demanda:
 
 ---
 
-## 3. Modelo C4
+##  Modelo C4
 
 Para el diseño de esta solución, se adopta el modelo de abstracción C4 con el fin de detallar la arquitectura del sistema de datos en múltiples niveles de profundidad. Este modelo garantiza total coherencia con las arquitecturas de referencia analíticas de Microsoft Azure.
 
-### 3.1 Nivel C1: Contexto del Sistema
+###  Nivel C1: Contexto del Sistema
 
 Este diagrama ilustra el ecosistema de datos de DataCo operando como una caja negra centralizada, delimitando los límites del sistema con respecto a los actores operativos y los orígenes/destinos externos.
 
@@ -188,7 +188,7 @@ Este diagrama ilustra el ecosistema de datos de DataCo operando como una caja ne
 
 ---
 
-### 3.2 Nivel C2: Contenedores
+###  Nivel C2: Contenedores
 
 Este nivel desglosa el pipeline de DataCo exponiendo las tecnologías específicas del stack de Microsoft Azure, sus responsabilidades asignadas, tipos de comunicación y las frecuencias operativas.
 
@@ -196,7 +196,7 @@ Este nivel desglosa el pipeline de DataCo exponiendo las tecnologías específic
 
 ---
 
-### 3.3 Nivel C3: Componentes (Boceto y Análisis)
+###  Nivel C3: Componentes (Boceto y Análisis)
 
 Este diagrama detalla de forma analítica el interior del contenedor de Azure Databricks, modelando el procesamiento lógico distribuido mediante notebooks independientes y acoplados por dependencias secuenciales.
 
@@ -207,3 +207,54 @@ Este diagrama detalla de forma analítica el interior del contenedor de Azure Da
 2. **`clean_inventory.py`:** Procesa los datos de Oracle extraídos, elimina filas duplicadas basadas en transacciones de stock y estandariza los formatos de fecha de vencimiento. Guarda en `curated/inventory/`.
 3. **`enrich_deliveries.py`:** Toma los archivos CSV de GPS y unifica las estructuras, cruzando las llaves logísticas con los datos limpios de SAP para habilitar la trazabilidad por rutas. Guarda en `curated/logistics/`.
 4. **`load_warehouse.py`:** Actúa como el cargador final (Target Loader). Consolida los tres subconjuntos Parquet de la zona Curated y ejecuta sentencias JDBC eficientes para poblar el modelo relacional en Azure SQL Database.
+
+
+
+## Decisiones Arquitectónicas (ADRs)
+
+A continuación, se documentan las decisiones técnicas tomadas para el diseño del pipeline de datos de DataCo, garantizando el cumplimiento de los requerimientos de negocio y restricciones técnicas.
+
+### ADR-01: Orquestación del Pipeline
+| Campo | Descripción |
+| :--- | :--- |
+| **Título** | Uso de Azure Data Factory sobre Logic Apps para la orquestación del pipeline. |
+| **Contexto** | DataCo requiere extraer datos de 4 fuentes heterogéneas (SAP, Oracle, CSV, Salesforce) con dependencias claras y tolerancia a fallos. |
+| **Alternativas evaluadas** | 1. Azure Data Factory (ADF)<br>2. Azure Logic Apps |
+| **Decisión** | **Azure Data Factory**. Se selecciona por su enfoque nativo en flujos ETL/ELT y manejo de grandes volúmenes de datos. Aprovecharemos el tier básico que incluye 5 actividades gratuitas al mes, ajustándose al presupuesto. |
+| **Consecuencias** | **Ventajas:** Control centralizado, reintentos automáticos y conectores nativos.<br>**Trade-offs:** La curva de aprendizaje es ligeramente mayor para los analistas, pero se mitiga usando la interfaz visual (no-code) de ADF. |
+
+### ADR-02: Herramienta de Transformación
+| Campo | Descripción |
+| :--- | :--- |
+| **Título** | Uso de Azure Databricks sobre Azure Synapse para la transformación de datos. |
+| **Contexto** | Se deben procesar 5 millones de registros por ejecución, limpiando duplicados e inconsistencias, con un equipo que solo maneja Python/SQL básico y un presupuesto muy ajustado. |
+| **Alternativas evaluadas** | 1. Azure Databricks (Community Edition)<br>2. Azure Synapse Analytics |
+| **Decisión** | **Azure Databricks (Community Edition)**. Databricks permite escribir transformaciones en Python (conocido por el equipo) usando el poder de Spark. La edición comunitaria es 100% gratuita, siendo clave para no superar los $80 USD mensuales. |
+| **Consecuencias** | **Ventajas:** Procesamiento distribuido en memoria a costo cero y facilidad de uso con notebooks.<br>**Trade-offs:** Al ser la versión Community, no cuenta con SLAs empresariales ni automatización avanzada de clústeres a largo plazo. |
+
+### ADR-03: Almacenamiento Data Lake
+| Campo | Descripción |
+| :--- | :--- |
+| **Título** | Uso de Data Lake Storage Gen2 y formato Parquet sobre Blob Storage estándar. |
+| **Contexto** | Los archivos extraídos deben almacenarse en su estado original (Raw) y luego disponibilizarse ya transformados (Curated) para el cruce de datos históricos. |
+| **Alternativas evaluadas** | 1. Azure Data Lake Storage Gen2 (ADLS Gen2) con formato Parquet<br>2. Azure Blob Storage estándar con formato CSV |
+| **Decisión** | **Azure Data Lake Storage Gen2**. Seleccionado por su espacio de nombres jerárquico que optimiza el rendimiento analítico. En la zona Curated se usará formato **Parquet** porque comprime mejor los datos y es más rápido de leer en Spark. |
+| **Consecuencias** | **Ventajas:** Mayor velocidad de consulta y menor costo de almacenamiento a largo plazo.<br>**Trade-offs:** Los analistas no pueden abrir los archivos Parquet directamente en Excel como harían con un CSV, requieren usar Databricks o Power BI. |
+
+### ADR-04: Almacén Analítico Final
+| Campo | Descripción |
+| :--- | :--- |
+| **Título** | Uso de Azure SQL Database sobre Cosmos DB para el modelo consolidado. |
+| **Contexto** | Se necesita un repositorio final estructurado que se actualice cada 4 horas y soporte consultas de inteligencia de negocios para un dashboard ejecutivo. |
+| **Alternativas evaluadas** | 1. Azure SQL Database<br>2. Azure Cosmos DB |
+| **Decisión** | **Azure SQL Database**. Los analistas de DataCo dominan SQL. Además, Azure ofrece un tier gratuito (32 GB) que encaja perfectamente en la fase piloto. |
+| **Consecuencias** | **Ventajas:** Integración nativa con Power BI y facilidad para modelado dimensional (estrella).<br>**Trade-offs:** Requiere que los datos semiestructurados (como los JSON de Salesforce) sean aplanados en Databricks antes de su inserción. |
+
+### ADR-05: Capa de Visualización
+| Campo | Descripción |
+| :--- | :--- |
+| **Título** | Uso de Power BI Desktop sobre Azure Analysis Services para reportes. |
+| **Contexto** | La gerencia necesita dashboards actualizados para medir ventas e inventarios sin incurrir en licencias adicionales que rompan el presupuesto. |
+| **Alternativas evaluadas** | 1. Power BI Desktop<br>2. Azure Analysis Services + Herramienta web |
+| **Decisión** | **Power BI Desktop**. DataCo ya tiene licenciado este producto, y la versión Desktop es gratuita. Se conecta nativamente al conector de SQL Server de Azure SQL Database. |
+| **Consecuencias** | **Ventajas:** Cero costo adicional y alta capacidad de visualización.<br>**Trade-offs:** La actualización automática de dashboards en la nube requeriría a futuro adquirir licencias Power BI Pro. Por ahora, se asume actualización desde Desktop. |
