@@ -110,10 +110,6 @@ Durante temporadas de alta demanda:
 
 ---
 
-
-
----
-
 ## 1. Drivers Funcionales
 
 | Driver | Descripción | Impacto en la arquitectura |
@@ -167,3 +163,47 @@ Durante temporadas de alta demanda:
 | ASR-08 | Tolerar fallos parciales | Alta | Asegura continuidad del pipeline aunque falle una fuente |
 
 ---
+
+## 3. Modelo C4
+
+Para el diseño de esta solución, se adopta el modelo de abstracción C4 con el fin de detallar la arquitectura del sistema de datos en múltiples niveles de profundidad. Este modelo garantiza total coherencia con las arquitecturas de referencia analíticas de Microsoft Azure.
+
+### 3.1 Nivel C1: Contexto del Sistema
+
+Este diagrama ilustra el ecosistema de datos de DataCo operando como una caja negra centralizada, delimitando los límites del sistema con respecto a los actores operativos y los orígenes/destinos externos.
+
+![Diagrama C1 - Contexto del Sistema DataCo](assets/C1Dataco.png)
+
+#### Documentación de Entidades C1
+* **Actores del Negocio:**
+  * **Analista de BI:** Consume datos limpios para la construcción de reportes técnicos y tableros operativos.
+  * **Gerente Comercial:** Tomador de decisiones estratégicas de negocio basado en indicadores comerciales e inventarios.
+  * **Auditor:** Valida el cumplimiento del gobierno de datos interno y la inmutabilidad de los procesos.
+* **Sistemas Externos Integrados:**
+  * **SAP On-premise (ERP):** Fuente local de órdenes de venta, facturas y maestros de precios.
+  * **Oracle Database (Inventario):** Base de datos transaccional con stocks y alertas de caducidad.
+  * **GPS de Flota (CSV):** Archivos planos con trazabilidad de rutas y tiempos de despacho.
+  * **Salesforce Cloud (CRM):** Plataforma SaaS comercial con datos de cartera y visitas.
+  * **Power BI Desktop:** Capa final destinada a la visualización y analítica corporativa.
+
+---
+
+### 3.2 Nivel C2: Contenedores
+
+Este nivel desglosa el pipeline de DataCo exponiendo las tecnologías específicas del stack de Microsoft Azure, sus responsabilidades asignadas, tipos de comunicación y las frecuencias operativas.
+
+![Diagrama C2 - Arquitectura de Contenedores Azure](assets/C2Dataco.png)
+
+---
+
+### 3.3 Nivel C3: Componentes (Boceto y Análisis)
+
+Este diagrama detalla de forma analítica el interior del contenedor de Azure Databricks, modelando el procesamiento lógico distribuido mediante notebooks independientes y acoplados por dependencias secuenciales.
+
+![Diagrama C3 - Componentes Internos de Databricks](assets/C3Dataco.png)
+
+#### Documentación Lógica de Componentes de Procesamiento
+1. **`ingest_sap.py`:** Lee la zona `raw/sap/`, aplica limpieza de cabeceras de facturas corruptas, estandariza tipos de datos primitivos y guarda en `curated/sap/` en formato Parquet.
+2. **`clean_inventory.py`:** Procesa los datos de Oracle extraídos, elimina filas duplicadas basadas en transacciones de stock y estandariza los formatos de fecha de vencimiento. Guarda en `curated/inventory/`.
+3. **`enrich_deliveries.py`:** Toma los archivos CSV de GPS y unifica las estructuras, cruzando las llaves logísticas con los datos limpios de SAP para habilitar la trazabilidad por rutas. Guarda en `curated/logistics/`.
+4. **`load_warehouse.py`:** Actúa como el cargador final (Target Loader). Consolida los tres subconjuntos Parquet de la zona Curated y ejecuta sentencias JDBC eficientes para poblar el modelo relacional en Azure SQL Database.
