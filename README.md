@@ -192,7 +192,7 @@ Este diagrama ilustra el ecosistema de datos de DataCo operando como una caja ne
 
 Este nivel desglosa el pipeline de DataCo exponiendo las tecnologías específicas del stack de Microsoft Azure, sus responsabilidades asignadas, tipos de comunicación y las frecuencias operativas.
 
-![Diagrama C2 - Arquitectura de Contenedores Azure](assets/C2Dataco.png)
+![Diagrama C2 - Arquitectura de Contenedores Azure](assets/C2DataCo.png)
 
 ---
 
@@ -200,7 +200,7 @@ Este nivel desglosa el pipeline de DataCo exponiendo las tecnologías específic
 
 Este diagrama detalla de forma analítica el interior del contenedor de Azure Databricks, modelando el procesamiento lógico distribuido mediante notebooks independientes y acoplados por dependencias secuenciales.
 
-![Diagrama C3 - Componentes Internos de Databricks](assets/C3Dataco.png)
+![Diagrama C3 - Componentes Internos de Databricks](assets/C3DataCo.png)
 
 #### Documentación Lógica de Componentes de Procesamiento
 1. **`ingest_sap.py`:** Lee la zona `raw/sap/`, aplica limpieza de cabeceras de facturas corruptas, estandariza tipos de datos primitivos y guarda en `curated/sap/` en formato Parquet.
