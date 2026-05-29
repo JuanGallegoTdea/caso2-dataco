@@ -109,3 +109,61 @@ Durante temporadas de alta demanda:
 - Existen riesgos de indisponibilidad
 
 ---
+
+
+
+---
+
+## 1. Drivers Funcionales
+
+| Driver | Descripción | Impacto en la arquitectura |
+|---|---|---|
+| Automatización del pipeline | Evitar procesos manuales en Excel | Se necesita orquestación con Azure Data Factory |
+| Limpieza de datos | Corregir duplicados, fechas y códigos inconsistentes | Se requiere procesamiento con Databricks |
+| Modelo de datos consolidado | Unificar ventas, inventario, logística y CRM | Se requiere almacén analítico en Azure SQL |
+| Visualización de información | Crear dashboards ejecutivos | Se utiliza Power BI Desktop conectado a Azure SQL |
+
+---
+
+## 2. Drivers No Funcionales
+
+| Driver | Descripción | Impacto en la arquitectura |
+|---|---|---|
+| Escalabilidad | Procesar hasta 5 millones de registros por ejecución | Uso de servicios cloud escalables |
+| Disponibilidad de datos | Datos disponibles con máximo 4 horas de rezago | Pipeline programado cada 4 horas |
+| Calidad de datos | Lograr más del 98% de registros limpios | Reglas de validación y transformación |
+| Tolerancia a fallos | Si una fuente falla, las demás deben procesarse | Pipelines desacoplados por fuente |
+| Seguridad | Proteger precios y márgenes por cliente | Control de acceso por roles |
+| Trazabilidad | Auditar cada transformación aplicada | Registro de logs y evidencias |
+| Bajo costo | No superar USD 80 mensuales en piloto | Uso de Free Tier y Community Edition |
+| Mantenibilidad | Equipo con SQL y Python básico | Arquitectura sencilla y documentada |
+
+---
+
+## 3. Restricciones Arquitectónicas
+
+| Restricción | Descripción | Decisión asociada |
+|---|---|---|
+| Presupuesto limitado | El piloto no debe superar USD 80 mensuales | Servicios Free Tier y bajo consumo |
+| SAP sin API REST | SAP solo puede integrarse por archivos CSV/JSON | Ingesta batch mediante archivos |
+| Equipo sin experiencia en Spark | Analistas con SQL y Python básico | Uso guiado de notebooks Databricks |
+| Power BI ya licenciado | No se pueden proponer herramientas BI pagas | Uso de Power BI Desktop |
+| Datos sensibles | Existen precios y márgenes por cliente | Seguridad mediante roles |
+| Fallos parciales | Una fuente puede fallar sin detener todo | Procesamiento independiente por sistema |
+
+---
+
+## 4. ASR - Requerimientos Arquitectónicamente Significativos
+
+| Código | ASR | Prioridad | Justificación |
+|---|---|---|---|
+| ASR-01 | Integrar los 4 sistemas fuente | Alta | Es la base para eliminar la fragmentación de datos |
+| ASR-02 | Actualizar datos cada máximo 4 horas | Alta | Reduce decisiones basadas en información desactualizada |
+| ASR-03 | Alcanzar más del 98% de registros limpios | Alta | Garantiza confiabilidad en reportes ejecutivos |
+| ASR-04 | Procesar hasta 5 millones de registros | Alta | Permite soportar cierres de mes y temporadas altas |
+| ASR-05 | Garantizar trazabilidad de transformaciones | Media | Facilita auditoría y gobierno de datos |
+| ASR-06 | Mantener costos menores a USD 80 | Alta | Condiciona la selección de servicios Azure |
+| ASR-07 | Proteger información sensible | Alta | Requiere control de acceso al almacén analítico |
+| ASR-08 | Tolerar fallos parciales | Alta | Asegura continuidad del pipeline aunque falle una fuente |
+
+---
