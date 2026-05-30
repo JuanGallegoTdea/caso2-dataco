@@ -2,8 +2,7 @@
 *Integrantes:* 
 - Juan Pablo Gallego Valencia  
 - Yeferson Grajales  
-- Fredy Alberto Licona Mena  
-- Manuela Valencia
+- Fredy Alberto Licona Mena 
 
 DataCo es una empresa colombiana dedicada a la distribución de productos de consumo masivo, con operaciones en 12 departamentos del país y más de 9.000 puntos de venta activos entre supermercados, tiendas y droguerías.
 
